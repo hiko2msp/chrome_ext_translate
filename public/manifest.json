@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Web Page Translator",
+  "version": "0.1.0",
+  "description": "Translates web pages using a local LLM.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
+  "action": {
+    "default_popup": "options.html"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [ "templates/*.json" ],
+      "matches": [ "<all_urls>" ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "identifier": "@local:plamo-2-translate-ja2en",
+  "name": "plamo-2-translate-ja2en",
+  "changed": true,
+  "operation": {
+    "fields": [
+      {
+        "key": "llm.prediction.promptTemplate",
+        "value": {
+          "type": "manual",
+          "manualPromptTemplate": {
+            "beforeSystem": "<|plamo:op|>dataset\n",
+            "afterSystem": "translation\n",
+            "beforeUser": "<|plamo:op|>input lang=Japanese\n",
+            "afterUser": "<|plamo:op|>output lang=English\n",
+            "beforeAssistant": "",
+            "afterAssistant": ""
+          },
+          "stopStrings": []
+        }
+      }
+    ]
+  },
+  "load": {
+    "fields": []
+  }
+}

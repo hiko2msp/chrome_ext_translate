@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Translator Settings</title>
+  </head>
+  <body>
+    <h1>Translator Settings</h1>
+    <form id="settings-form">
+      <div>
+        <label for="endpoint">LLM API Endpoint:</label>
+        <input type="url" id="endpoint" name="endpoint" size="50" />
+      </div>
+      <br />
+      <div>
+        <label for="en2ja-model">English to Japanese Model:</label>
+        <input type="text" id="en2ja-model" name="en2ja-model" />
+      </div>
+      <br />
+      <div>
+        <label for="ja2en-model">Japanese to English Model:</label>
+        <input type="text" id="ja2en-model" name="ja2en-model" />
+      </div>
+      <br />
+      <button type="submit">Save</button>
+    </form>
+    <p id="status"></p>
+
+    <script type="module" src="/src/options.ts"></script>
+  </body>
+</html>
