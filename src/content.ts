@@ -26,20 +26,36 @@ async function translatePage(sourceLang: string, targetLang: string) {
     textNodes.push(node as Text);
   }
 
+  // Cache for already‑translated texts
+  const translationCache = new Map<string, string>();
+
   for (const node of textNodes) {
-    const text = node.nodeValue!;
+    const originalText = node.nodeValue!.trim();
+
+    // Return cached result if we have it
+    if (translationCache.has(originalText)) {
+      if (translationCache.get(originalText) !== '') {
+        node.nodeValue = translationCache.get(originalText)!;
+      }
+      continue;
+    }
+
     try {
       const response = await chrome.runtime.sendMessage({
         action: 'translate',
-        text,
+        text: originalText,
         sourceLang,
         targetLang,
       });
-      console.log('Translated ', text, response);
+      console.log('Translated ', originalText, response);
 
       if (response.translatedText) {
-        console.log('Translated text:', text, response.translatedText);
+        console.log('Translated text:', originalText, response.translatedText);
+        // Store in cache and replace node value
+        translationCache.set(originalText, response.translatedText);
         node.nodeValue = response.translatedText;
+      } else if (response.translatedText === '') {
+        translationCache.set(originalText, response.translatedText);
       } else if (response.error) {
         console.error('Translation failed:', response.error);
       }

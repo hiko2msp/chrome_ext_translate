@@ -114,7 +114,7 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
 
   const template = await getPromptTemplate(sourceLang, targetLang);
 
-  const systemContent = `${template.beforeSystem}${template.afterSystem}`;
+  const systemContent = `${template.beforeSystem}${template.afterSystem}\n`;
   const userContent = `${template.beforeUser}${text}${template.afterUser}`;
 
   const response = await fetch(endpoint, {
@@ -124,16 +124,7 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
     },
     body: JSON.stringify({
       model: model,
-      messages: [
-        {
-          role: 'system',
-          content: systemContent,
-        },
-        {
-          role: 'user',
-          content: userContent,
-        },
-      ],
+      prompt: systemContent + userContent,
       stream: false,
     }),
   });
@@ -143,12 +134,12 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
   }
 
   const data = await response.json();
-  let translated = data.choices[0].message.content;
+  let translated = data.choices[0].text as string;
   if (translated.startsWith(template.beforeAssistant)) {
     translated = translated.substring(template.beforeAssistant.length);
   }
   if (translated.endsWith(template.afterAssistant)) {
     translated = translated.substring(0, translated.length - template.afterAssistant.length);
   }
-  return translated;
+  return translated.trim();
 }
