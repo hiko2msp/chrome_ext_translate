@@ -1,59 +1,105 @@
 // Create context menus on installation
 chrome.runtime.onInstalled.addListener(() => {
+  // For page translation
   chrome.contextMenus.create({
     id: 'en-to-ja',
-    title: '英日翻訳',
+    title: '英日翻訳（ページ全体）',
     contexts: ['page'],
   });
   chrome.contextMenus.create({
     id: 'ja-to-en',
-    title: '日英翻訳',
+    title: '日英翻訳（ページ全体）',
     contexts: ['page'],
+  });
+
+  // For selection translation
+  chrome.contextMenus.create({
+    id: 'translate-selection',
+    title: '選択したテキストを翻訳',
+    contexts: ['selection'],
+  });
+  chrome.contextMenus.create({
+    id: 'selection-to-ja',
+    title: '→日本語へ',
+    parentId: 'translate-selection',
+    contexts: ['selection'],
+  });
+  chrome.contextMenus.create({
+    id: 'selection-to-en',
+    title: '→英語へ',
+    parentId: 'translate-selection',
+    contexts: ['selection'],
   });
 });
 
 // Listener for context menu clicks
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!tab?.id) {
     console.error('Tab ID not found.');
     return;
   }
 
-  let sourceLang: string;
-  let targetLang: string;
+  const { menuItemId, selectionText } = info;
 
-  if (info.menuItemId === 'en-to-ja') {
-    sourceLang = 'en';
-    targetLang = 'ja';
-  } else if (info.menuItemId === 'ja-to-en') {
-    sourceLang = 'ja';
-    targetLang = 'en';
-  } else {
+  // Handle page translation
+  if (menuItemId === 'en-to-ja' || menuItemId === 'ja-to-en') {
+    const sourceLang = menuItemId === 'en-to-ja' ? 'en' : 'ja';
+    const targetLang = menuItemId === 'en-to-ja' ? 'ja' : 'en';
+
+    chrome.scripting.executeScript(
+      {
+        target: { tabId: tab.id },
+        files: ['src/content.js'],
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error injecting script:', chrome.runtime.lastError);
+          return;
+        }
+        chrome.tabs.sendMessage(tab.id!, {
+          action: 'translatePage',
+          sourceLang,
+          targetLang,
+        });
+      }
+    );
     return;
   }
 
-  // Inject the content script and then send a message to it
-  chrome.scripting.executeScript(
-    {
-      target: { tabId: tab.id },
-      files: ['src/content.js'],
-    },
-    () => {
-      if (chrome.runtime.lastError) {
-        console.error('Error injecting script:', chrome.runtime.lastError);
-        return;
+  // Handle selection translation
+  if (menuItemId === 'selection-to-ja' || menuItemId === 'selection-to-en') {
+    if (!selectionText) return;
+
+    const sourceLang = menuItemId === 'selection-to-ja' ? 'en' : 'ja'; // Assume source language
+    const targetLang = menuItemId === 'selection-to-ja' ? 'ja' : 'en';
+
+    // Open the side panel
+    await chrome.sidePanel.open({ tabId: tab.id });
+
+    try {
+      const translatedText = await translateText(selectionText, sourceLang, targetLang);
+      // Send the translation to the side panel
+      chrome.runtime.sendMessage({
+        action: 'showSelectionInSidePanel',
+        text: translatedText,
+      });
+    } catch (error) {
+      console.error('Selection translation error:', error);
+      let errorMessage = 'An unknown error occurred.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
       }
-      chrome.tabs.sendMessage(tab.id!, {
-        action: 'translatePage',
-        sourceLang,
-        targetLang,
+      // Send error to the side panel
+      chrome.runtime.sendMessage({
+        action: 'showSelectionInSidePanel',
+        text: `Error: ${errorMessage}`,
       });
     }
-  );
+  }
 });
 
 
-// Listener for messages from the content script (for the actual translation)
+// Listener for messages from the content script (for page translation)
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'translate') {
     translateText(request.text, request.sourceLang, request.targetLang)
@@ -114,7 +160,8 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
 
   const template = await getPromptTemplate(sourceLang, targetLang);
 
-  const systemContent = `${template.beforeSystem}${template.afterSystem}\n`;
+  const systemContent = `${template.beforeSystem}${template.afterSystem}
+`;
   const userContent = `${template.beforeUser}${text}${template.afterUser}`;
 
   const response = await fetch(endpoint, {

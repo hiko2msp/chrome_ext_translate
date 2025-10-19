@@ -9,6 +9,7 @@ export default defineConfig({
         options: resolve(__dirname, 'options.html'),
         background: resolve(__dirname, 'src/background.ts'),
         content: resolve(__dirname, 'src/content.ts'),
+        sidepanel: resolve(__dirname, 'sidepanel.html'),
       },
       output: {
         entryFileNames: `src/[name].js`,

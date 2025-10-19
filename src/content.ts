@@ -4,9 +4,11 @@ chrome.runtime.onMessage.addListener((request, _sender, _sendResponse) => {
   }
 });
 
+
 const skipTags = new Set(['STYLE', 'SCRIPT', 'NOSCRIPT', 'CODE', 'PRE']);
 
 async function translatePage(sourceLang: string, targetLang: string) {
+  // ... (The rest of the file is the same)
   const textNodes: Text[] = [];
   const walker = document.createTreeWalker(
     document.body,

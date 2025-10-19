@@ -7,7 +7,8 @@
     "storage",
     "activeTab",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "sidePanel"
   ],
   "action": {
     "default_popup": "options.html"
@@ -22,5 +23,8 @@
       "resources": [ "templates/*.json" ],
       "matches": [ "<all_urls>" ]
     }
-  ]
+  ],
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  }
 }
