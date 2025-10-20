@@ -48,10 +48,14 @@ This is a Chrome extension that translates selected text on a web page using a s
     - Specify the model names for translation and summarization.
     - Click "Save".
 
+    ![Settings Page](images/settings.png)
+
 2.  **Translate Text**:
     - Select any text on a web page.
     - Right-click to open the context menu.
     - Choose the translation option (e.g., "Translate English to Japanese").
+
+    ![Context Menu](images/select_menu.png)
 
 3.  **View Result**:
     - The browser's side panel will open and display the translation result.
