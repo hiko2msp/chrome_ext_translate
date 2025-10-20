@@ -94,3 +94,66 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/* Options Page Styles */
+.options-page {
+  display: block;
+  place-items: initial;
+  min-height: initial;
+  padding: 1rem 2rem; /* Reduced top/bottom padding */
+}
+
+.options-page .container {
+  max-width: 600px;
+  margin: 0 auto; /* Removed top/bottom margin */
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.options-page h1 {
+  font-size: 2em;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background-color: #1a1a1a;
+  font-size: 1em;
+}
+
+.options-page button[type="submit"] {
+  width: 100%;
+  padding: 0.8em;
+  background-color: #646cff;
+  color: white;
+}
+
+.options-page button[type="submit"]:hover {
+  background-color: #535bf2;
+}
+
+@media (prefers-color-scheme: light) {
+  .options-page .container {
+    background-color: #f9f9f9;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  }
+
+  .form-group input {
+    background-color: #fff;
+    border: 1px solid #ccc;
+  }
+}
