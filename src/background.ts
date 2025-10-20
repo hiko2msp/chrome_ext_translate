@@ -12,22 +12,21 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ['page'],
   });
 
-  // For selection translation
-  chrome.contextMenus.create({
-    id: 'translate-selection',
-    title: '選択したテキストを翻訳',
-    contexts: ['selection'],
-  });
   chrome.contextMenus.create({
     id: 'selection-to-ja',
     title: '→日本語へ',
-    parentId: 'translate-selection',
     contexts: ['selection'],
   });
   chrome.contextMenus.create({
     id: 'selection-to-en',
     title: '→英語へ',
-    parentId: 'translate-selection',
+    contexts: ['selection'],
+  });
+
+  // For summarization
+  chrome.contextMenus.create({
+    id: 'summarize-ja',
+    title: '日本語で要約する',
     contexts: ['selection'],
   });
 });
@@ -73,12 +72,10 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     const sourceLang = menuItemId === 'selection-to-ja' ? 'en' : 'ja'; // Assume source language
     const targetLang = menuItemId === 'selection-to-ja' ? 'ja' : 'en';
 
-    // Open the side panel
     await chrome.sidePanel.open({ tabId: tab.id });
 
     try {
       const translatedText = await translateText(selectionText, sourceLang, targetLang);
-      // Send the translation to the side panel
       chrome.runtime.sendMessage({
         action: 'showSelectionInSidePanel',
         text: translatedText,
@@ -89,7 +86,32 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
       if (error instanceof Error) {
         errorMessage = error.message;
       }
-      // Send error to the side panel
+      chrome.runtime.sendMessage({
+        action: 'showSelectionInSidePanel',
+        text: `Error: ${errorMessage}`,
+      });
+    }
+    return;
+  }
+
+  // Handle summarization
+  if (menuItemId === 'summarize-ja') {
+    if (!selectionText) return;
+
+    await chrome.sidePanel.open({ tabId: tab.id });
+
+    try {
+      const summary = await summarizeText(selectionText);
+      chrome.runtime.sendMessage({
+        action: 'showSelectionInSidePanel',
+        text: summary,
+      });
+    } catch (error) {
+      console.error('Summarization error:', error);
+      let errorMessage = 'An unknown error occurred.';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       chrome.runtime.sendMessage({
         action: 'showSelectionInSidePanel',
         text: `Error: ${errorMessage}`,
@@ -164,7 +186,7 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
 `;
   const userContent = `${template.beforeUser}${text}${template.afterUser}`;
 
-  const response = await fetch(endpoint, {
+  const response = await fetch(endpoint + '/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -189,4 +211,46 @@ async function translateText(text: string, sourceLang: string, targetLang: strin
     translated = translated.substring(0, translated.length - template.afterAssistant.length);
   }
   return translated.trim();
+}
+
+async function summarizeText(text: string): Promise<string> {
+  const { endpoint, summarizeModel } = await chrome.storage.local.get([
+    'endpoint',
+    'summarizeModel',
+  ]);
+
+  if (!endpoint) {
+    throw new Error('LLM endpoint is not set.');
+  }
+  if (!summarizeModel) {
+    throw new Error('Summarization model is not set.');
+  }
+
+  const systemPrompt = 'You are a helpful assistant. Please provide a concise summary of the following text in Japanese.';
+  const userPrompt = `Text to summarize:
+
+${text}`;
+
+  const response = await fetch(`${endpoint}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: summarizeModel,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      stream: false,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  console.log(data)
+  return data.choices[0].message.content.trim();
 }
